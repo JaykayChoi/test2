@@ -1,11 +1,14 @@
-// 쇼핑 리스트 앱 - JavaScript
+// 쇼핑 리스트 앱 - JavaScript (Supabase 연동)
+// Supabase 클라이언트 로드
+const supabaseClient = require('./supabase-client');
+
 class ShoppingListApp {
     constructor() {
-        this.items = this.loadFromLocalStorage();
+        this.items = [];
         this.currentFilter = 'all';
         this.initializeElements();
         this.setupEventListeners();
-        this.render();
+        this.loadFromSupabase();
     }
 
     // DOM 요소 초기화
@@ -40,19 +43,46 @@ class ShoppingListApp {
         this.clearCompletedButton.addEventListener('click', () => this.clearCompletedItems());
     }
 
-    // 로컬 스토리지에서 데이터 불러오기
-    loadFromLocalStorage() {
-        const savedItems = localStorage.getItem('shoppingListItems');
-        return savedItems ? JSON.parse(savedItems) : [];
+    // Supabase에서 데이터 불러오기
+    async loadFromSupabase() {
+        try {
+            this.items = await supabaseClient.getAllItems();
+            this.render();
+            
+            // 로컬 스토리지에 백업 데이터가 있으면 Supabase로 마이그레이션
+            const savedItems = localStorage.getItem('shoppingListItems');
+            if (savedItems && savedItems.length > 2) { // 빈 배열이 아닌지 확인
+                const localItems = JSON.parse(savedItems);
+                if (localItems.length > 0) {
+                    await supabaseClient.migrateFromLocalStorage(localItems);
+                    localStorage.removeItem('shoppingListItems'); // 마이그레이션 후 로컬 스토리지 삭제
+                    this.items = await supabaseClient.getAllItems();
+                    this.render();
+                    this.showNotification('로컬 데이터가 Supabase로 마이그레이션되었습니다!', 'success');
+                }
+            }
+        } catch (error) {
+            console.error('Supabase에서 데이터를 불러오는 중 오류 발생:', error);
+            // 오류 발생 시 로컬 스토리지에서 데이터 로드
+            this.loadFromLocalStorageAsFallback();
+        }
     }
 
-    // 로컬 스토리지에 데이터 저장
-    saveToLocalStorage() {
-        localStorage.setItem('shoppingListItems', JSON.stringify(this.items));
+    // 로컬 스토리지에서 데이터 불러오기 (폴백)
+    loadFromLocalStorageAsFallback() {
+        const savedItems = localStorage.getItem('shoppingListItems');
+        this.items = savedItems ? JSON.parse(savedItems) : [];
+        this.render();
+        this.showNotification('Supabase 연결 실패, 로컬 스토리지 사용 중', 'error');
+    }
+
+    // Supabase에 데이터 저장
+    async saveToSupabase() {
+        // 항목별로 Supabase에 저장
     }
 
     // 항목 추가
-    addItem() {
+    async addItem() {
         const text = this.itemInput.value.trim();
         
         if (!text) {
@@ -67,40 +97,77 @@ class ShoppingListApp {
             createdAt: new Date().toISOString()
         };
 
-        this.items.push(newItem);
-        this.saveToLocalStorage();
-        this.render();
+        // Supabase에 항목 추가
+        const addedItem = await supabaseClient.addItem(newItem);
         
-        this.itemInput.value = '';
-        this.itemInput.focus();
-        
-        this.showNotification('항목이 추가되었습니다!', 'success');
+        if (addedItem) {
+            this.items.push(addedItem);
+            this.render();
+            
+            this.itemInput.value = '';
+            this.itemInput.focus();
+            
+            this.showNotification('항목이 추가되었습니다!', 'success');
+        } else {
+            // Supabase 실패 시 로컬에 저장
+            this.items.push(newItem);
+            localStorage.setItem('shoppingListItems', JSON.stringify(this.items));
+            this.render();
+            
+            this.itemInput.value = '';
+            this.itemInput.focus();
+            
+            this.showNotification('항목이 추가되었습니다! (로컬 저장)', 'info');
+        }
     }
 
     // 항목 삭제
-    deleteItem(id) {
-        this.items = this.items.filter(item => item.id !== id);
-        this.saveToLocalStorage();
-        this.render();
+    async deleteItem(id) {
+        // Supabase에서 항목 삭제
+        const success = await supabaseClient.deleteItem(id);
         
-        this.showNotification('항목이 삭제되었습니다!', 'info');
+        if (success) {
+            this.items = this.items.filter(item => item.id !== id);
+            this.render();
+            this.showNotification('항목이 삭제되었습니다!', 'info');
+        } else {
+            // Supabase 실패 시 로컬에서 삭제
+            this.items = this.items.filter(item => item.id !== id);
+            localStorage.setItem('shoppingListItems', JSON.stringify(this.items));
+            this.render();
+            this.showNotification('항목이 삭제되었습니다! (로컬)', 'info');
+        }
     }
 
     // 항목 완료 상태 토글
-    toggleItemCompletion(id) {
+    async toggleItemCompletion(id) {
         const item = this.items.find(item => item.id === id);
         if (item) {
-            item.completed = !item.completed;
-            this.saveToLocalStorage();
-            this.render();
+            const newCompletedState = !item.completed;
             
-            const message = item.completed ? '구매 완료!' : '구매 예정으로 변경';
-            this.showNotification(message, 'success');
+            // Supabase에서 항목 상태 업데이트
+            const success = await supabaseClient.updateItemCompletion(id, newCompletedState);
+            
+            if (success) {
+                item.completed = newCompletedState;
+                this.render();
+                
+                const message = item.completed ? '구매 완료!' : '구매 예정으로 변경';
+                this.showNotification(message, 'success');
+            } else {
+                // Supabase 실패 시 로컬에서 업데이트
+                item.completed = newCompletedState;
+                localStorage.setItem('shoppingListItems', JSON.stringify(this.items));
+                this.render();
+                
+                const message = item.completed ? '구매 완료! (로컬)' : '구매 예정으로 변경 (로컬)';
+                this.showNotification(message, 'info');
+            }
         }
     }
 
     // 완료된 항목 모두 삭제
-    clearCompletedItems() {
+    async clearCompletedItems() {
         const completedCount = this.items.filter(item => item.completed).length;
         
         if (completedCount === 0) {
@@ -109,11 +176,20 @@ class ShoppingListApp {
         }
 
         if (confirm(`${completedCount}개의 완료된 항목을 삭제하시겠습니까?`)) {
-            this.items = this.items.filter(item => !item.completed);
-            this.saveToLocalStorage();
-            this.render();
+            // Supabase에서 완료된 항목 삭제
+            const success = await supabaseClient.deleteCompletedItems();
             
-            this.showNotification(`${completedCount}개의 항목이 삭제되었습니다!`, 'success');
+            if (success) {
+                this.items = this.items.filter(item => !item.completed);
+                this.render();
+                this.showNotification(`${completedCount}개의 항목이 삭제되었습니다!`, 'success');
+            } else {
+                // Supabase 실패 시 로컬에서 삭제
+                this.items = this.items.filter(item => !item.completed);
+                localStorage.setItem('shoppingListItems', JSON.stringify(this.items));
+                this.render();
+                this.showNotification(`${completedCount}개의 항목이 삭제되었습니다! (로컬)`, 'info');
+            }
         }
     }
 
@@ -299,22 +375,33 @@ class ShoppingListApp {
 }
 
 // 앱 초기화
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const app = new ShoppingListApp();
     
-    // 샘플 데이터 추가 (처음 실행 시)
-    if (app.items.length === 0) {
-        const sampleItems = [
-            { id: 1, text: '사과', completed: false, createdAt: new Date().toISOString() },
-            { id: 2, text: '우유', completed: true, createdAt: new Date().toISOString() },
-            { id: 3, text: '빵', completed: false, createdAt: new Date().toISOString() },
-            { id: 4, text: '계란', completed: false, createdAt: new Date().toISOString() },
-            { id: 5, text: '채소', completed: false, createdAt: new Date().toISOString() }
-        ];
-        
-        app.items = sampleItems;
-        app.saveToLocalStorage();
-        app.render();
-        app.showNotification('샘플 데이터가 추가되었습니다!', 'info');
-    }
+    // 앱이 로드된 후 샘플 데이터 확인 (비동기로 처리)
+    setTimeout(async () => {
+        if (app.items.length === 0) {
+            // Supabase에서 데이터가 없는지 확인
+            const items = await supabaseClient.getAllItems();
+            if (items.length === 0) {
+                const sampleItems = [
+                    { id: Date.now() + 1, text: '사과', completed: false, createdAt: new Date().toISOString() },
+                    { id: Date.now() + 2, text: '우유', completed: true, createdAt: new Date().toISOString() },
+                    { id: Date.now() + 3, text: '빵', completed: false, createdAt: new Date().toISOString() },
+                    { id: Date.now() + 4, text: '계란', completed: false, createdAt: new Date().toISOString() },
+                    { id: Date.now() + 5, text: '채소', completed: false, createdAt: new Date().toISOString() }
+                ];
+                
+                // 샘플 데이터를 Supabase에 추가
+                for (const item of sampleItems) {
+                    await supabaseClient.addItem(item);
+                }
+                
+                // 앱 다시 로드
+                app.items = await supabaseClient.getAllItems();
+                app.render();
+                app.showNotification('샘플 데이터가 추가되었습니다!', 'info');
+            }
+        }
+    }, 1000); // 1초 후에 실행하여 앱 초기화 완료 보장
 });
