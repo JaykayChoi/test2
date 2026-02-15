@@ -4,7 +4,14 @@ const SUPABASE_URL = 'https://lldwzyirjrmlqglnthrj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsZHd6eWlyanJtbHFnbG50aHJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzM3MzYsImV4cCI6MjA4NjcwOTczNn0.kp8X9vt9ZpeKqC1I-T3C_FfTORZFqPrJ9Vur-IRKE_Y';
 
 // Supabase 클라이언트 초기화 (브라우저에서 사용)
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+// Supabase CDN은 전역에 supabase 객체를 노출시킵니다
+let supabase = null;
+if (typeof window !== 'undefined' && window.supabase) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('Supabase 클라이언트 초기화 성공');
+} else {
+    console.warn('Supabase 클라이언트를 초기화할 수 없습니다. 로컬 스토리지 모드로 전환됩니다.');
+}
 
 class ShoppingListApp {
     constructor() {
@@ -49,13 +56,19 @@ class ShoppingListApp {
 
     // Supabase에서 데이터 불러오기
     async loadFromSupabase() {
+        console.log('loadFromSupabase 호출됨');
+        console.log('Supabase 클라이언트 상태:', supabase ? '초기화됨' : '초기화되지 않음');
+        
         if (!supabase) {
+            console.warn('Supabase 클라이언트가 없으므로 로컬 스토리지로 폴백');
             this.loadFromLocalStorageAsFallback();
             return;
         }
 
         try {
+            console.log('Supabase에서 데이터 로드 시도');
             this.items = await this.getAllItemsFromSupabase();
+            console.log('Supabase에서 로드된 항목 수:', this.items.length);
             this.render();
             
             // 로컬 스토리지에 백업 데이터가 있으면 Supabase로 마이그레이션
@@ -63,6 +76,7 @@ class ShoppingListApp {
             if (savedItems && savedItems.length > 2) { // 빈 배열이 아닌지 확인
                 const localItems = JSON.parse(savedItems);
                 if (localItems.length > 0) {
+                    console.log('로컬 스토리지 데이터 마이그레이션 시도:', localItems.length, '개 항목');
                     await this.migrateFromLocalStorage(localItems);
                     localStorage.removeItem('shoppingListItems'); // 마이그레이션 후 로컬 스토리지 삭제
                     this.items = await this.getAllItemsFromSupabase();
@@ -72,6 +86,7 @@ class ShoppingListApp {
             }
         } catch (error) {
             console.error('Supabase에서 데이터를 불러오는 중 오류 발생:', error);
+            console.error('오류 상세:', error.message);
             // 오류 발생 시 로컬 스토리지에서 데이터 로드
             this.loadFromLocalStorageAsFallback();
         }
@@ -106,10 +121,14 @@ class ShoppingListApp {
             createdAt: new Date().toISOString()
         };
 
+        console.log('항목 추가 시도:', newItem);
+        console.log('Supabase 클라이언트 상태:', supabase ? '초기화됨' : '초기화되지 않음');
+
         // Supabase에 항목 추가
         const addedItem = await this.addItemToSupabase(newItem);
         
         if (addedItem) {
+            console.log('Supabase 항목 추가 성공:', addedItem);
             this.items.push(addedItem);
             this.render();
             
@@ -118,6 +137,7 @@ class ShoppingListApp {
             
             this.showNotification('항목이 추가되었습니다!', 'success');
         } else {
+            console.log('Supabase 항목 추가 실패, 로컬 스토리지로 폴백');
             // Supabase 실패 시 로컬에 저장
             this.items.push(newItem);
             localStorage.setItem('shoppingListItems', JSON.stringify(this.items));
@@ -386,9 +406,13 @@ class ShoppingListApp {
     
     // 모든 항목 가져오기
     async getAllItemsFromSupabase() {
-        if (!supabase) return [];
+        if (!supabase) {
+            console.warn('getAllItemsFromSupabase: Supabase 클라이언트가 없음');
+            return [];
+        }
         
         try {
+            console.log('getAllItemsFromSupabase: Supabase 쿼리 실행');
             const { data, error } = await supabase
                 .from('shopping_items')
                 .select('*')
@@ -396,9 +420,11 @@ class ShoppingListApp {
 
             if (error) {
                 console.error('항목을 가져오는 중 오류 발생:', error);
+                console.error('오류 상세:', error.message, error.code, error.details);
                 return [];
             }
 
+            console.log('getAllItemsFromSupabase: 성공, 항목 수:', data.length);
             return data.map(item => ({
                 id: item.id,
                 text: item.text,
@@ -407,15 +433,20 @@ class ShoppingListApp {
             }));
         } catch (error) {
             console.error('항목을 가져오는 중 예외 발생:', error);
+            console.error('예외 스택:', error.stack);
             return [];
         }
     }
 
     // 항목 추가
     async addItemToSupabase(item) {
-        if (!supabase) return null;
+        if (!supabase) {
+            console.error('Supabase 클라이언트가 초기화되지 않았습니다.');
+            return null;
+        }
         
         try {
+            console.log('Supabase에 항목 추가 중:', item);
             const { data, error } = await supabase
                 .from('shopping_items')
                 .insert({
@@ -429,9 +460,11 @@ class ShoppingListApp {
 
             if (error) {
                 console.error('항목 추가 중 오류 발생:', error);
+                console.error('오류 상세:', error.message, error.code, error.details);
                 return null;
             }
 
+            console.log('Supabase 항목 추가 성공:', data);
             return {
                 id: data.id,
                 text: data.text,
@@ -440,6 +473,7 @@ class ShoppingListApp {
             };
         } catch (error) {
             console.error('항목 추가 중 예외 발생:', error);
+            console.error('예외 스택:', error.stack);
             return null;
         }
     }
