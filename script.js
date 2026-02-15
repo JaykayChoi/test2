@@ -1,6 +1,10 @@
 // 쇼핑 리스트 앱 - JavaScript (Supabase 연동)
-// Supabase 클라이언트 로드
-const supabaseClient = require('./supabase-client');
+// Supabase 설정
+const SUPABASE_URL = 'https://lldwzyirjrmlqglnthrj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsZHd6eWlyanJtbHFnbG50aHJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzM3MzYsImV4cCI6MjA4NjcwOTczNn0.kp8X9vt9ZpeKqC1I-T3C_FfTORZFqPrJ9Vur-IRKE_Y';
+
+// Supabase 클라이언트 초기화 (브라우저에서 사용)
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 class ShoppingListApp {
     constructor() {
@@ -45,8 +49,13 @@ class ShoppingListApp {
 
     // Supabase에서 데이터 불러오기
     async loadFromSupabase() {
+        if (!supabase) {
+            this.loadFromLocalStorageAsFallback();
+            return;
+        }
+
         try {
-            this.items = await supabaseClient.getAllItems();
+            this.items = await this.getAllItemsFromSupabase();
             this.render();
             
             // 로컬 스토리지에 백업 데이터가 있으면 Supabase로 마이그레이션
@@ -54,9 +63,9 @@ class ShoppingListApp {
             if (savedItems && savedItems.length > 2) { // 빈 배열이 아닌지 확인
                 const localItems = JSON.parse(savedItems);
                 if (localItems.length > 0) {
-                    await supabaseClient.migrateFromLocalStorage(localItems);
+                    await this.migrateFromLocalStorage(localItems);
                     localStorage.removeItem('shoppingListItems'); // 마이그레이션 후 로컬 스토리지 삭제
-                    this.items = await supabaseClient.getAllItems();
+                    this.items = await this.getAllItemsFromSupabase();
                     this.render();
                     this.showNotification('로컬 데이터가 Supabase로 마이그레이션되었습니다!', 'success');
                 }
@@ -98,7 +107,7 @@ class ShoppingListApp {
         };
 
         // Supabase에 항목 추가
-        const addedItem = await supabaseClient.addItem(newItem);
+        const addedItem = await this.addItemToSupabase(newItem);
         
         if (addedItem) {
             this.items.push(addedItem);
@@ -124,7 +133,7 @@ class ShoppingListApp {
     // 항목 삭제
     async deleteItem(id) {
         // Supabase에서 항목 삭제
-        const success = await supabaseClient.deleteItem(id);
+        const success = await this.deleteItemFromSupabase(id);
         
         if (success) {
             this.items = this.items.filter(item => item.id !== id);
@@ -146,7 +155,7 @@ class ShoppingListApp {
             const newCompletedState = !item.completed;
             
             // Supabase에서 항목 상태 업데이트
-            const success = await supabaseClient.updateItemCompletion(id, newCompletedState);
+            const success = await this.updateItemCompletionInSupabase(id, newCompletedState);
             
             if (success) {
                 item.completed = newCompletedState;
@@ -177,7 +186,7 @@ class ShoppingListApp {
 
         if (confirm(`${completedCount}개의 완료된 항목을 삭제하시겠습니까?`)) {
             // Supabase에서 완료된 항목 삭제
-            const success = await supabaseClient.deleteCompletedItems();
+            const success = await this.deleteCompletedItemsFromSupabase();
             
             if (success) {
                 this.items = this.items.filter(item => !item.completed);
@@ -372,6 +381,173 @@ class ShoppingListApp {
             }
         }, 3000);
     }
+
+    // Supabase 관련 메서드들
+    
+    // 모든 항목 가져오기
+    async getAllItemsFromSupabase() {
+        if (!supabase) return [];
+        
+        try {
+            const { data, error } = await supabase
+                .from('shopping_items')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('항목을 가져오는 중 오류 발생:', error);
+                return [];
+            }
+
+            return data.map(item => ({
+                id: item.id,
+                text: item.text,
+                completed: item.completed,
+                createdAt: item.created_at
+            }));
+        } catch (error) {
+            console.error('항목을 가져오는 중 예외 발생:', error);
+            return [];
+        }
+    }
+
+    // 항목 추가
+    async addItemToSupabase(item) {
+        if (!supabase) return null;
+        
+        try {
+            const { data, error } = await supabase
+                .from('shopping_items')
+                .insert({
+                    id: item.id,
+                    text: item.text,
+                    completed: item.completed,
+                    created_at: item.createdAt
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error('항목 추가 중 오류 발생:', error);
+                return null;
+            }
+
+            return {
+                id: data.id,
+                text: data.text,
+                completed: data.completed,
+                createdAt: data.created_at
+            };
+        } catch (error) {
+            console.error('항목 추가 중 예외 발생:', error);
+            return null;
+        }
+    }
+
+    // 항목 삭제
+    async deleteItemFromSupabase(id) {
+        if (!supabase) return false;
+        
+        try {
+            const { error } = await supabase
+                .from('shopping_items')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('항목 삭제 중 오류 발생:', error);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('항목 삭제 중 예외 발생:', error);
+            return false;
+        }
+    }
+
+    // 항목 완료 상태 업데이트
+    async updateItemCompletionInSupabase(id, completed) {
+        if (!supabase) return false;
+        
+        try {
+            const { error } = await supabase
+                .from('shopping_items')
+                .update({ completed })
+                .eq('id', id);
+
+            if (error) {
+                console.error('항목 업데이트 중 오류 발생:', error);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('항목 업데이트 중 예외 발생:', error);
+            return false;
+        }
+    }
+
+    // 완료된 항목 모두 삭제
+    async deleteCompletedItemsFromSupabase() {
+        if (!supabase) return false;
+        
+        try {
+            const { error } = await supabase
+                .from('shopping_items')
+                .delete()
+                .eq('completed', true);
+
+            if (error) {
+                console.error('완료된 항목 삭제 중 오류 발생:', error);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('완료된 항목 삭제 중 예외 발생:', error);
+            return false;
+        }
+    }
+
+    // 로컬 스토리지 데이터를 Supabase로 마이그레이션
+    async migrateFromLocalStorage(localItems) {
+        if (!supabase) return false;
+        
+        try {
+            // 기존 데이터 삭제 (선택사항)
+            const { error: deleteError } = await supabase
+                .from('shopping_items')
+                .delete()
+                .neq('id', 0); // 모든 항목 삭제
+
+            if (deleteError) {
+                console.error('기존 데이터 삭제 중 오류 발생:', deleteError);
+            }
+
+            // 새 데이터 삽입
+            const itemsToInsert = localItems.map(item => ({
+                id: item.id,
+                text: item.text,
+                completed: item.completed,
+                created_at: item.createdAt || new Date().toISOString()
+            }));
+
+            const { error: insertError } = await supabase
+                .from('shopping_items')
+                .insert(itemsToInsert);
+
+            if (insertError) {
+                console.error('데이터 마이그레이션 중 오류 발생:', insertError);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('데이터 마이그레이션 중 예외 발생:', error);
+            return false;
+        }
+    }
 }
 
 // 앱 초기화
@@ -382,7 +558,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(async () => {
         if (app.items.length === 0) {
             // Supabase에서 데이터가 없는지 확인
-            const items = await supabaseClient.getAllItems();
+            const items = await app.getAllItemsFromSupabase();
             if (items.length === 0) {
                 const sampleItems = [
                     { id: Date.now() + 1, text: '사과', completed: false, createdAt: new Date().toISOString() },
@@ -394,11 +570,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 // 샘플 데이터를 Supabase에 추가
                 for (const item of sampleItems) {
-                    await supabaseClient.addItem(item);
+                    await app.addItemToSupabase(item);
                 }
                 
                 // 앱 다시 로드
-                app.items = await supabaseClient.getAllItems();
+                app.items = await app.getAllItemsFromSupabase();
                 app.render();
                 app.showNotification('샘플 데이터가 추가되었습니다!', 'info');
             }
