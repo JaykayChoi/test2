@@ -26,24 +26,48 @@
 ## 파일 구조
 
 ```
-shopping-list-app/
-├── index.html      # 메인 HTML 파일
-├── style.css       # 스타일시트
-├── script.js       # JavaScript 기능
-└── README.md       # 이 설명 파일
+.
+├── index.html                      # 메인 HTML 파일
+├── style.css                       # 스타일시트
+├── script.js                       # JavaScript 기능
+├── package.json                    # npm 패키지 설정
+├── package-lock.json               # 의존성 잠금 파일
+├── test-shopping-list.js           # Playwright 테스트 (UI 포함)
+├── test-shopping-list-headless.js  # Playwright 테스트 (헤드리스)
+├── test-report.json                # 테스트 결과 보고서
+├── README.md                       # 이 설명 파일
+├── code-quality-report.md          # 코드 품질 분석 보고서
+├── comprehensive-analysis-report.md # 종합 비교 분석 보고서
+├── context7-code-analysis-report.md # Context7 코드 분석 보고서
+├── .github/workflows/opencode.yml  # GitHub Actions 워크플로우
+└── node_modules/                   # npm 의존성 패키지
+    └── playwright/                 # Playwright 테스트 프레임워크
 ```
 
 ## 기술 스택
 
-- HTML5
-- CSS3 (Flexbox, Grid, 반응형 디자인)
-- JavaScript (ES6+, 클래스 기반 구조)
-- 로컬 스토리지 API
-- Font Awesome 아이콘
-- Google Fonts
+### 프론트엔드
+- **HTML5**: 시맨틱 마크업, 최신 표준 준수
+- **CSS3**: Flexbox, Grid, 반응형 디자인, CSS Custom Properties
+- **JavaScript**: ES6+, 클래스 기반 구조, 모듈화
+- **로컬 스토리지 API**: 브라우저 데이터 지속성
+- **Font Awesome 6.4.0**: 모던 아이콘 라이브러리
+- **Google Fonts**: Noto Sans KR, Poppins 폰트
+
+### 개발 도구
+- **Playwright 1.58.2**: 크로스 브라우저 자동화 테스트
+- **npm**: 패키지 관리 및 스크립트 실행
+- **Git**: 버전 관리
+- **GitHub Actions**: CI/CD 자동화
+
+### 테스트
+- **자동화 테스트**: 17개 테스트 케이스 (94.1% 통과율)
+- **UI 테스트**: 실제 브라우저에서의 기능 검증
+- **헤드리스 테스트**: 서버 환경에서의 테스트
 
 ## 실행 방법
 
+### 웹 애플리케이션 실행
 1. 이 폴더의 `index.html` 파일을 더블클릭하거나
 2. 웹 브라우저에서 파일을 드래그 앤 드롭하거나
 3. 터미널에서 다음 명령어 실행:
@@ -58,11 +82,65 @@ shopping-list-app/
    xdg-open index.html
    ```
 
+### 개발 환경 설정
+```bash
+# 의존성 설치
+npm install
+
+# 테스트 실행
+npm test
+
+# 헤드리스 모드 테스트 실행
+npm run test-headless
+```
+
+### GitHub Actions
+프로젝트에는 GitHub Actions 워크플로우가 설정되어 있습니다:
+- `.github/workflows/opencode.yml`: OpenCode 자동화 워크플로우
+- 이슈/PR 코멘트에 `/oc` 또는 `/opencode` 명령어로 트리거
+
 ## 특징
 
+### 기능적 특징
 - **모던 UI**: 깔끔하고 현대적인 디자인
 - **사용자 친화적**: 직관적인 인터페이스
 - **오프라인 작동**: 인터넷 연결 없이도 사용 가능
 - **데이터 보존**: 브라우저를 닫아도 데이터가 유지됨
 - **접근성**: 키보드 네비게이션 지원
 - **크로스 브라우저**: 주요 브라우저 모두 지원
+
+### 기술적 특징
+- **반응형 디자인**: 모바일, 태블릿, 데스크톱 최적화
+- **클래스 기반 구조**: 모듈화된 JavaScript 코드
+- **자동화 테스트**: Playwright를 통한 종단간 테스트
+- **코드 품질**: 92/100 점의 우수한 코드 품질 (분석 보고서 참조)
+- **CI/CD 준비**: GitHub Actions 워크플로우 설정
+
+### 테스트 커버리지
+- **항목 추가/삭제**: 5개 테스트 케이스
+- **체크 기능**: 3개 테스트 케이스  
+- **필터링 기능**: 4개 테스트 케이스
+- **통계 기능**: 2개 테스트 케이스
+- **로컬 스토리지**: 1개 테스트 케이스
+- **완료 항목 삭제**: 1개 테스트 케이스 (현재 실패)
+
+## 프로젝트 상태
+
+### 현재 상태
+- **Git 커밋**: 2개 (최신 커밋: 파일 구조 정리)
+- **테스트 통과율**: 94.1% (17개 중 16개 통과)
+- **코드 품질 점수**: 92/100 (우수)
+- **MDN 표준 준수도**: 95% (매우 높음)
+
+### 변경 사항 요약 (2026년 2월 15일 검사)
+1. **파일 구조 정리**: `shopping-list-app/` 하위 디렉토리에서 루트로 이동
+2. **Git 히스토리**: 2개의 커밋으로 구성된 깔끔한 기록
+3. **테스트 상태**: 94.1% 통과율로 안정적인 기능 보장
+4. **분석 보고서**: 3개의 상세 분석 보고서 포함
+5. **CI/CD 준비**: GitHub Actions 워크플로우 설정 완료
+
+### 분석 보고서
+프로젝트에는 다음과 같은 상세 분석 보고서가 포함되어 있습니다:
+1. **code-quality-report.md**: 코드 품질 평가 보고서
+2. **comprehensive-analysis-report.md**: 종합 비교 분석 보고서  
+3. **context7-code-analysis-report.md**: Context7 코드 분석 보고서

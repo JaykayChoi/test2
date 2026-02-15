@@ -4,111 +4,111 @@
     "passedTests": 16,
     "failedTests": 1,
     "passRate": "94.1%",
-    "duration": "18.91초",
-    "timestamp": "2026-02-15T11:32:27.396Z"
+    "duration": "20.30초",
+    "timestamp": "2026-02-15T13:39:40.780Z"
   },
   "details": [
     {
       "testName": "빈 입력 시 알림 표시",
       "passed": true,
       "details": "빈 항목 추가 시 에러 알림이 표시됨",
-      "timestamp": "2026-02-15T11:32:10.458Z"
+      "timestamp": "2026-02-15T13:39:23.470Z"
     },
     {
       "testName": "항목 추가 기능",
       "passed": true,
       "details": "\"테스트 항목 - 사과\" 항목이 정상적으로 추가됨",
-      "timestamp": "2026-02-15T11:32:11.744Z"
+      "timestamp": "2026-02-15T13:39:24.774Z"
     },
     {
       "testName": "Enter 키 항목 추가",
       "passed": true,
       "details": "Enter 키로 항목 추가 기능 정상 작동",
-      "timestamp": "2026-02-15T11:32:13.001Z"
+      "timestamp": "2026-02-15T13:39:26.042Z"
     },
     {
       "testName": "입력창 초기화",
       "passed": true,
       "details": "항목 추가 후 입력창이 초기화됨",
-      "timestamp": "2026-02-15T11:32:13.006Z"
+      "timestamp": "2026-02-15T13:39:26.047Z"
     },
     {
       "testName": "체크 기능",
       "passed": true,
       "details": "항목 체크 기능 정상 작동",
-      "timestamp": "2026-02-15T11:32:14.438Z"
+      "timestamp": "2026-02-15T13:39:27.497Z"
     },
     {
       "testName": "CSS 클래스 업데이트",
       "passed": true,
       "details": "체크 시 completed 클래스가 적용됨",
-      "timestamp": "2026-02-15T11:32:14.443Z"
+      "timestamp": "2026-02-15T13:39:27.503Z"
     },
     {
       "testName": "통계 업데이트",
       "passed": true,
       "details": "구매 완료 수: 2",
-      "timestamp": "2026-02-15T11:32:14.446Z"
+      "timestamp": "2026-02-15T13:39:27.508Z"
     },
     {
       "testName": "항목 삭제 기능",
       "passed": true,
       "details": "항목 삭제 성공 (8 → 7)",
-      "timestamp": "2026-02-15T11:32:15.606Z"
+      "timestamp": "2026-02-15T13:39:28.679Z"
     },
     {
       "testName": "삭제 알림",
       "passed": true,
       "details": "알림 메시지: \"항목이 삭제되었습니다!\"",
-      "timestamp": "2026-02-15T11:32:15.613Z"
+      "timestamp": "2026-02-15T13:39:28.688Z"
     },
     {
       "testName": "구매 예정 필터",
       "passed": true,
       "details": "구매 예정 항목: 7개",
-      "timestamp": "2026-02-15T11:32:18.743Z"
+      "timestamp": "2026-02-15T13:39:31.887Z"
     },
     {
       "testName": "구매 완료 필터",
       "passed": true,
       "details": "구매 완료 항목: 3개",
-      "timestamp": "2026-02-15T11:32:19.384Z"
+      "timestamp": "2026-02-15T13:39:32.552Z"
     },
     {
       "testName": "전체 보기 필터",
       "passed": true,
       "details": "전체 항목: 10개 (구매 예정: 7, 구매 완료: 3)",
-      "timestamp": "2026-02-15T11:32:20.039Z"
+      "timestamp": "2026-02-15T13:39:33.212Z"
     },
     {
       "testName": "필터 버튼 활성화",
       "passed": true,
       "details": "전체 보기 버튼이 활성화 상태임",
-      "timestamp": "2026-02-15T11:32:20.041Z"
+      "timestamp": "2026-02-15T13:39:33.215Z"
     },
     {
       "testName": "통계 일관성",
       "passed": true,
       "details": "전체: 10, 완료: 3, 남은: 7 (일치함)",
-      "timestamp": "2026-02-15T11:32:20.049Z"
+      "timestamp": "2026-02-15T13:39:33.230Z"
     },
     {
       "testName": "통계 실시간 업데이트",
       "passed": true,
       "details": "항목 추가 후 통계 업데이트: 10 → 11",
-      "timestamp": "2026-02-15T11:32:20.815Z"
+      "timestamp": "2026-02-15T13:39:34.021Z"
     },
     {
       "testName": "완료된 항목 삭제",
       "passed": false,
       "details": "삭제 실패: 전체 14 → 14, 완료 2 → 2, 현재 항목: 14개",
-      "timestamp": "2026-02-15T11:32:25.411Z"
+      "timestamp": "2026-02-15T13:39:38.731Z"
     },
     {
       "testName": "로컬 스토리지 데이터 유지",
       "passed": true,
       "details": "페이지 새로고침 후 데이터 유지: 14 → 15 항목",
-      "timestamp": "2026-02-15T11:32:27.396Z"
+      "timestamp": "2026-02-15T13:39:40.779Z"
     }
   ]
 }
