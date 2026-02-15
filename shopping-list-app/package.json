@@ -1,0 +1,17 @@
+{
+  "name": "shopping-list-app",
+  "version": "1.0.0",
+  "description": "간단한 쇼핑 리스트 웹 애플리케이션입니다. 로컬 브라우저에서 실행되며, 로컬 스토리지를 사용하여 데이터를 저장합니다.",
+  "main": "script.js",
+  "scripts": {
+    "test": "node test-shopping-list.js",
+    "test-headless": "node test-shopping-list-headless.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.58.2"
+  }
+}

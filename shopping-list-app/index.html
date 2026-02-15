@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쇼핑 리스트 앱</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <h1><i class="fas fa-shopping-cart"></i> 나의 쇼핑 리스트</h1>
+            <p class="subtitle">구매할 물품을 추가하고 관리하세요</p>
+        </header>
+
+        <main class="app-main">
+            <div class="input-section">
+                <div class="input-group">
+                    <input type="text" id="itemInput" placeholder="구매할 물품을 입력하세요 (예: 사과, 우유, 빵)">
+                    <button id="addButton" class="btn-primary">
+                        <i class="fas fa-plus"></i> 추가
+                    </button>
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">전체 항목</span>
+                        <span id="totalCount" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">구매 완료</span>
+                        <span id="completedCount" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">남은 항목</span>
+                        <span id="remainingCount" class="stat-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">전체 보기</button>
+                    <button class="filter-btn" data-filter="active">구매 예정</button>
+                    <button class="filter-btn" data-filter="completed">구매 완료</button>
+                </div>
+                <button id="clearCompleted" class="btn-secondary">
+                    <i class="fas fa-trash-alt"></i> 완료된 항목 삭제
+                </button>
+            </div>
+
+            <div class="shopping-list-section">
+                <h2><i class="fas fa-list"></i> 쇼핑 리스트</h2>
+                <div id="shoppingList" class="shopping-list">
+                    <!-- 항목들이 여기에 동적으로 추가됩니다 -->
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <p>쇼핑 리스트가 비어있습니다.</p>
+                        <p class="empty-hint">위의 입력창에 물품을 추가해보세요!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> 사용 방법</h3>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> 항목 추가: 입력창에 물품을 입력하고 "추가" 버튼을 클릭하세요</li>
+                    <li><i class="fas fa-check-circle"></i> 구매 완료: 항목 왼쪽의 체크박스를 클릭하세요</li>
+                    <li><i class="fas fa-check-circle"></i> 항목 삭제: 항목 오른쪽의 휴지통 아이콘을 클릭하세요</li>
+                    <li><i class="fas fa-check-circle"></i> 필터링: 상단의 버튼으로 전체/구매 예정/구매 완료 항목을 필터링하세요</li>
+                </ul>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <p>© 2025 쇼핑 리스트 앱 | 로컬 스토리지에 데이터가 저장됩니다</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

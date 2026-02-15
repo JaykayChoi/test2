@@ -1,0 +1,320 @@
+// 쇼핑 리스트 앱 - JavaScript
+class ShoppingListApp {
+    constructor() {
+        this.items = this.loadFromLocalStorage();
+        this.currentFilter = 'all';
+        this.initializeElements();
+        this.setupEventListeners();
+        this.render();
+    }
+
+    // DOM 요소 초기화
+    initializeElements() {
+        this.itemInput = document.getElementById('itemInput');
+        this.addButton = document.getElementById('addButton');
+        this.shoppingList = document.getElementById('shoppingList');
+        this.totalCount = document.getElementById('totalCount');
+        this.completedCount = document.getElementById('completedCount');
+        this.remainingCount = document.getElementById('remainingCount');
+        this.filterButtons = document.querySelectorAll('.filter-btn');
+        this.clearCompletedButton = document.getElementById('clearCompleted');
+    }
+
+    // 이벤트 리스너 설정
+    setupEventListeners() {
+        // 항목 추가
+        this.addButton.addEventListener('click', () => this.addItem());
+        this.itemInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.addItem();
+        });
+
+        // 필터 버튼
+        this.filterButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const filter = e.target.dataset.filter;
+                this.setFilter(filter);
+            });
+        });
+
+        // 완료된 항목 삭제
+        this.clearCompletedButton.addEventListener('click', () => this.clearCompletedItems());
+    }
+
+    // 로컬 스토리지에서 데이터 불러오기
+    loadFromLocalStorage() {
+        const savedItems = localStorage.getItem('shoppingListItems');
+        return savedItems ? JSON.parse(savedItems) : [];
+    }
+
+    // 로컬 스토리지에 데이터 저장
+    saveToLocalStorage() {
+        localStorage.setItem('shoppingListItems', JSON.stringify(this.items));
+    }
+
+    // 항목 추가
+    addItem() {
+        const text = this.itemInput.value.trim();
+        
+        if (!text) {
+            this.showNotification('항목을 입력해주세요!', 'error');
+            return;
+        }
+
+        const newItem = {
+            id: Date.now(),
+            text: text,
+            completed: false,
+            createdAt: new Date().toISOString()
+        };
+
+        this.items.push(newItem);
+        this.saveToLocalStorage();
+        this.render();
+        
+        this.itemInput.value = '';
+        this.itemInput.focus();
+        
+        this.showNotification('항목이 추가되었습니다!', 'success');
+    }
+
+    // 항목 삭제
+    deleteItem(id) {
+        this.items = this.items.filter(item => item.id !== id);
+        this.saveToLocalStorage();
+        this.render();
+        
+        this.showNotification('항목이 삭제되었습니다!', 'info');
+    }
+
+    // 항목 완료 상태 토글
+    toggleItemCompletion(id) {
+        const item = this.items.find(item => item.id === id);
+        if (item) {
+            item.completed = !item.completed;
+            this.saveToLocalStorage();
+            this.render();
+            
+            const message = item.completed ? '구매 완료!' : '구매 예정으로 변경';
+            this.showNotification(message, 'success');
+        }
+    }
+
+    // 완료된 항목 모두 삭제
+    clearCompletedItems() {
+        const completedCount = this.items.filter(item => item.completed).length;
+        
+        if (completedCount === 0) {
+            this.showNotification('삭제할 완료된 항목이 없습니다.', 'info');
+            return;
+        }
+
+        if (confirm(`${completedCount}개의 완료된 항목을 삭제하시겠습니까?`)) {
+            this.items = this.items.filter(item => !item.completed);
+            this.saveToLocalStorage();
+            this.render();
+            
+            this.showNotification(`${completedCount}개의 항목이 삭제되었습니다!`, 'success');
+        }
+    }
+
+    // 필터 설정
+    setFilter(filter) {
+        this.currentFilter = filter;
+        
+        // 필터 버튼 활성화 상태 업데이트
+        this.filterButtons.forEach(button => {
+            if (button.dataset.filter === filter) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+        
+        this.render();
+    }
+
+    // 필터링된 항목 가져오기
+    getFilteredItems() {
+        switch (this.currentFilter) {
+            case 'active':
+                return this.items.filter(item => !item.completed);
+            case 'completed':
+                return this.items.filter(item => item.completed);
+            default:
+                return this.items;
+        }
+    }
+
+    // 통계 업데이트
+    updateStats() {
+        const total = this.items.length;
+        const completed = this.items.filter(item => item.completed).length;
+        const remaining = total - completed;
+
+        this.totalCount.textContent = total;
+        this.completedCount.textContent = completed;
+        this.remainingCount.textContent = remaining;
+    }
+
+    // 항목 렌더링
+    renderItem(item) {
+        const itemElement = document.createElement('div');
+        itemElement.className = 'shopping-item';
+        itemElement.dataset.id = item.id;
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'item-checkbox';
+        checkbox.checked = item.completed;
+        checkbox.addEventListener('change', () => this.toggleItemCompletion(item.id));
+
+        const content = document.createElement('div');
+        content.className = `item-content ${item.completed ? 'completed' : ''}`;
+        content.textContent = item.text;
+
+        const actions = document.createElement('div');
+        actions.className = 'item-actions';
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'item-action-btn delete-btn';
+        deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteButton.title = '삭제';
+        deleteButton.addEventListener('click', () => this.deleteItem(item.id));
+
+        actions.appendChild(deleteButton);
+        
+        itemElement.appendChild(checkbox);
+        itemElement.appendChild(content);
+        itemElement.appendChild(actions);
+
+        return itemElement;
+    }
+
+    // 전체 렌더링
+    render() {
+        this.updateStats();
+        
+        const filteredItems = this.getFilteredItems();
+        
+        if (filteredItems.length === 0) {
+            let message = '';
+            switch (this.currentFilter) {
+                case 'active':
+                    message = '구매 예정인 항목이 없습니다.';
+                    break;
+                case 'completed':
+                    message = '구매 완료된 항목이 없습니다.';
+                    break;
+                default:
+                    message = '쇼핑 리스트가 비어있습니다.';
+            }
+            
+            this.shoppingList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>${message}</p>
+                    <p class="empty-hint">위의 입력창에 물품을 추가해보세요!</p>
+                </div>
+            `;
+        } else {
+            this.shoppingList.innerHTML = '';
+            filteredItems.forEach(item => {
+                this.shoppingList.appendChild(this.renderItem(item));
+            });
+        }
+    }
+
+    // 알림 표시
+    showNotification(message, type) {
+        // 기존 알림 제거
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
+        // 새 알림 생성
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+
+        // 스타일 추가
+        const style = document.createElement('style');
+        style.textContent = `
+            .notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                border-radius: 10px;
+                color: white;
+                font-weight: 500;
+                z-index: 1000;
+                animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            }
+            
+            .notification-success {
+                background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            }
+            
+            .notification-error {
+                background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            }
+            
+            .notification-info {
+                background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            }
+            
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes fadeOut {
+                from {
+                    opacity: 1;
+                }
+                to {
+                    opacity: 0;
+                }
+            }
+        `;
+        
+        document.head.appendChild(style);
+        document.body.appendChild(notification);
+
+        // 3초 후 알림 제거
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 3000);
+    }
+}
+
+// 앱 초기화
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new ShoppingListApp();
+    
+    // 샘플 데이터 추가 (처음 실행 시)
+    if (app.items.length === 0) {
+        const sampleItems = [
+            { id: 1, text: '사과', completed: false, createdAt: new Date().toISOString() },
+            { id: 2, text: '우유', completed: true, createdAt: new Date().toISOString() },
+            { id: 3, text: '빵', completed: false, createdAt: new Date().toISOString() },
+            { id: 4, text: '계란', completed: false, createdAt: new Date().toISOString() },
+            { id: 5, text: '채소', completed: false, createdAt: new Date().toISOString() }
+        ];
+        
+        app.items = sampleItems;
+        app.saveToLocalStorage();
+        app.render();
+        app.showNotification('샘플 데이터가 추가되었습니다!', 'info');
+    }
+});
